@@ -1,0 +1,254 @@
+﻿# Ejemplos para VS Code REST Client.
+# Reemplazá los IDs con los registros que acabás de crear.
+# Generación de texto/imagen puede consumir créditos.
+# Las últimas rutas de publicación envían contenido REAL: usarlas solo tras revisar y configurar las cuentas.
+@base = http://localhost:3001
+@id = ID_DEL_PROSPECTO_CREADO
+@campania = ID_DE_LA_CAMPANIA
+@entrevista = ID_DE_LA_ENTREVISTA
+@evento = ID_DEL_EVENTO
+@gasto = ID_DEL_GASTO
+@imagen = ID_DE_LA_IMAGEN
+@publicacion = ID_DEL_BORRADOR
+@cuenta = ID_DE_LA_CUENTA_META
+
+### Salud
+GET {{base}}/salud
+
+### Catálogos
+GET {{base}}/sedes
+
+###
+GET {{base}}/etapas
+
+### Registro: devuelve ID y etapa Prospecto
+POST {{base}}/prospectos
+Content-Type: application/json
+
+{"nombre":"Persona Demo Nueva","correo":"nueva@example.com","sedeId":1,"canalOrigen":"Instagram","observaciones":"Datos ficticios de demostración."}
+
+### Listado paginado
+GET {{base}}/prospectos?q=Demo&page=1&limit=10
+
+### Ficha
+GET {{base}}/prospectos/{{id}}
+
+### Avance: usar únicamente la siguiente etapa real
+PATCH {{base}}/prospectos/{{id}}/etapa
+Content-Type: application/json
+
+{"etapaId":2,"comentario":"Confirmó interés en continuar."}
+
+### Editar información sin cambiar el proceso
+PATCH {{base}}/prospectos/{{id}}
+Content-Type: application/json
+
+{"observaciones":"Solicita orientación sobre el siguiente paso."}
+
+### Historial de etapas
+GET {{base}}/prospectos/{{id}}/historial
+
+### Embudo: población por ingreso, progreso hasta hoy
+GET {{base}}/embudo?sedeId=1&fechaDesde=2026-01-01&fechaHasta=2026-12-31
+
+### Atención: excluye espera, excluidos y estudiantes
+GET {{base}}/atencion?dias=3&sedeId=1
+
+### Tablero completo
+GET {{base}}/tablero?sedeId=1
+
+### Borrador de seguimiento con Groq (consume generación)
+POST {{base}}/prospectos/{{id}}/mensaje
+Content-Type: application/json
+
+{}
+
+### Mensajes guardados
+GET {{base}}/prospectos/{{id}}/mensajes
+
+### Lista de espera
+PATCH {{base}}/prospectos/{{id}}/estado
+Content-Type: application/json
+
+{"estado":"espera","motivo":"Solicita esperar disponibilidad de cupo."}
+
+###
+GET {{base}}/prospectos?estadoProceso=espera&page=1&limit=20
+
+### Exclusión manual con motivo, sin borrar historia
+PATCH {{base}}/prospectos/{{id}}/estado
+Content-Type: application/json
+
+{"estado":"excluido","motivo":"Decisión ficticia para la demostración."}
+
+###
+GET {{base}}/prospectos?estadoProceso=excluido&page=1&limit=20
+
+### Reactivación
+PATCH {{base}}/prospectos/{{id}}/estado
+Content-Type: application/json
+
+{"estado":"activo","motivo":"Solicita continuar el proceso."}
+
+###
+GET {{base}}/prospectos/{{id}}/estados
+
+### Programar entrevista; ajustar fechas para tu prueba
+POST {{base}}/entrevistas
+Content-Type: application/json
+
+{"prospectoId":{{id}},"sedeId":1,"titulo":"Entrevista de admisión","inicio":"2026-11-25T10:00:00-06:00","fin":"2026-11-25T11:00:00-06:00","responsable":"Equipo Demo","lugar":"Sala ficticia","notas":"Datos ficticios."}
+
+###
+GET {{base}}/entrevistas?estado=programada&page=1&limit=20
+
+### Reprogramar
+PUT {{base}}/entrevistas/{{entrevista}}
+Content-Type: application/json
+
+{"prospectoId":{{id}},"sedeId":1,"titulo":"Entrevista reprogramada","inicio":"2026-11-25T11:00:00-06:00","fin":"2026-11-25T12:00:00-06:00","responsable":"Equipo Demo","lugar":"Sala ficticia","notas":"Reprogramación solicitada."}
+
+### Asistencia: no cambia la etapa del prospecto
+PATCH {{base}}/entrevistas/{{entrevista}}/resultado
+Content-Type: application/json
+
+{"estado":"realizada","resultado":"pendiente","notas":"Pendiente de revisión humana."}
+
+### Revisión independiente de una entrevista realizada
+PATCH {{base}}/entrevistas/{{entrevista}}/revision
+Content-Type: application/json
+
+{"resultado":"favorable","notas":"Resultado revisado."}
+
+### Resultados por revisar
+GET {{base}}/entrevistas?estado=realizada&resultado=pendiente
+
+### Crear actividad general
+POST {{base}}/calendario
+Content-Type: application/json
+
+{"sedeId":1,"titulo":"Campus Day de demostración","tipo":"campus_day","inicio":"2026-11-24T09:00:00-06:00","fin":"2026-11-24T11:00:00-06:00","responsable":"Coordinación Demo","lugar":"Campus ficticio","notas":"No corresponde a una invitación real."}
+
+###
+GET {{base}}/calendario?fechaDesde=2026-11-01&fechaHasta=2026-11-30
+
+### Exportación ICS
+GET {{base}}/calendario.ics?fechaDesde=2026-11-01&fechaHasta=2026-11-30
+
+### Reprogramar actividad general
+PUT {{base}}/calendario/{{evento}}
+Content-Type: application/json
+
+{"sedeId":1,"titulo":"Campus Day de demostración","tipo":"campus_day","inicio":"2026-11-24T10:00:00-06:00","fin":"2026-11-24T12:00:00-06:00","responsable":"Coordinación Demo","lugar":"Campus ficticio"}
+
+### Cerrar actividad, conservando el registro
+PATCH {{base}}/calendario/{{evento}}/estado
+Content-Type: application/json
+
+{"estado":"completado"}
+
+### Crear campaña con tres textos (consume generación Groq)
+POST {{base}}/campanias
+Content-Type: application/json
+
+{"objetivo":"Invitar a personas interesadas a solicitar orientación sobre admisiones.","sedeId":1}
+
+###
+GET {{base}}/campanias?page=1&limit=10
+
+### Aprobar campaña; no publica piezas
+POST {{base}}/campanias/{{campania}}/aprobar
+Content-Type: application/json
+
+{}
+
+### Definir presupuesto; no realiza pagos
+PATCH {{base}}/campanias/{{campania}}/presupuesto
+Content-Type: application/json
+
+{"presupuesto":"100000.00","moneda":"CRC"}
+
+### Registrar gasto; cambiar fecha si corresponde
+POST {{base}}/campanias/{{campania}}/gastos
+Content-Type: application/json
+
+{"concepto":"Materiales de demostración","monto":"5000.00","fecha":"2026-11-20"}
+
+###
+GET {{base}}/campanias/{{campania}}/gastos
+
+### Anular conserva la auditoría
+POST {{base}}/gastos/{{gasto}}/anular
+Content-Type: application/json
+
+{"motivo":"Registro duplicado en la demostración."}
+
+### Atribución manual del prospecto a una campaña de su sede
+PATCH {{base}}/prospectos/{{id}}/atribucion
+Content-Type: application/json
+
+{"campaniaId":{{campania}}}
+
+### Finanzas: fechas de gastos y llegada a Admitido
+GET {{base}}/finanzas?fechaDesde=2026-11-01&fechaHasta=2026-11-30
+
+### Configuración visible sin claves
+GET {{base}}/integraciones
+
+### Verificar cuentas con Meta; no publica
+POST {{base}}/integraciones/verificar
+Content-Type: application/json
+
+{}
+
+### Crear imagen (requiere API adicional y puede consumir créditos)
+POST {{base}}/imagenes
+Content-Type: application/json
+
+{"campaniaId":{{campania}},"prompt":"Ilustración de un aula luminosa con materiales de aprendizaje, azul y morado, sin texto ni logotipos.","tamano":"1024x1024"}
+
+###
+GET {{base}}/imagenes?page=1&limit=12
+
+### Reintentar solo una imagen fallida
+POST {{base}}/imagenes/{{imagen}}/reintentar
+Content-Type: application/json
+
+{}
+
+### Preparar borrador; no publica
+POST {{base}}/publicaciones
+Content-Type: application/json
+
+{"campaniaId":{{campania}},"red":"facebook","texto":"Solicitá orientación sobre el proceso de admisión. Demostración académica."}
+
+###
+GET {{base}}/publicaciones?page=1&limit=20
+
+### Editar borrador: invalida aprobación y aumenta revisión
+PATCH {{base}}/publicaciones/{{publicacion}}
+Content-Type: application/json
+
+{"campaniaId":{{campania}},"red":"facebook","texto":"Texto revisado por el equipo de admisiones.","revision":1}
+
+### Aprobar revisión exacta y cuenta; ajustar revisión tras editar
+POST {{base}}/publicaciones/{{publicacion}}/aprobar
+Content-Type: application/json
+
+{"revision":2,"cuentaDestino":"{{cuenta}}"}
+
+### ATENCIÓN: PUBLICA REALMENTE en la cuenta aprobada
+# Ejecutar únicamente tras revisar el texto, imagen, cuenta y revisión.
+POST {{base}}/publicaciones/{{publicacion}}/publicar
+Content-Type: application/json
+
+{"revision":2}
+
+### Conciliar solo si quedó incierta y ya verificaste el ID en la cuenta
+POST {{base}}/publicaciones/{{publicacion}}/conciliar
+Content-Type: application/json
+
+{"externoId":"ID_PUBLICADO_EN_META"}
+
+###
+GET {{base}}/publicaciones/{{publicacion}}/historial
